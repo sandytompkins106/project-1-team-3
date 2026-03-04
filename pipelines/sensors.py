@@ -3,7 +3,7 @@ import yaml
 from loguru import logger
 from sqlalchemy import Column, Integer, String, Float, MetaData, Table
 from dotenv import load_dotenv
-from assets.extract_locations_bronze import run_locations_bronze
+from assets.extract_sensors_bronze import run_sensors_bronze
 from db.postgresql_client import PostgreSqlClient
 
 
@@ -16,13 +16,6 @@ def load(
 ) -> None:
     """
     Load dataframe to postgres using specified method.
-    
-    Args:
-        df: dataframe to load
-        postgresql_client: postgresql client
-        table: sqlalchemy table
-        metadata: sqlalchemy metadata
-        load_method: 'insert' (append), 'overwrite' (full), or 'upsert' (default)
     """
     if load_method == "insert":
         postgresql_client.insert(
@@ -43,19 +36,16 @@ def load(
 
 
 def pipeline(config: dict):
-    logger.info("Starting bronze pipeline run")
-    
-    # Load environment variables from .env file
+    logger.info("Starting sensors pipeline run")
+
+    # load env
     load_dotenv()
-    
-    # Set up environment variables
     SERVER_NAME = os.environ.get("SERVER_NAME")
     DATABASE_NAME = os.environ.get("DATABASE_NAME")
     DB_USERNAME = os.environ.get("DB_USERNAME")
     DB_PASSWORD = os.environ.get("DB_PASSWORD")
     PORT = os.environ.get("PORT")
-    
-    # Create postgres client
+
     postgresql_client = PostgreSqlClient(
         server_name=SERVER_NAME,
         database_name=DATABASE_NAME,
@@ -63,49 +53,53 @@ def pipeline(config: dict):
         password=DB_PASSWORD,
         port=PORT,
     )
-    
-    # Extract locations
-    logger.info("Extracting locations from OpenAQ API")
-    df_locations = run_locations_bronze(country_id=config.get("country_id", 155))
-    
-    # Define locations table
+
+    # extract sensors metadata from existing locations in DB
+    logger.info("Extracting sensors metadata")
+    df_sensors = run_sensors_bronze(postgresql_client)
+    # show preview before loading
+    logger.info(f"Extracted {len(df_sensors)} sensor records")
+    if not df_sensors.empty:
+        logger.info("Sensor dataframe head:\n" + df_sensors.head().to_string())
+    # if config requests dry run, return early
+    if config.get("dry_run", False):
+        logger.info("Dry run requested, skipping load")
+        return
+
     metadata = MetaData()
-    locations_table = Table(
-        "locations",
+    sensors_table = Table(
+        "sensors",
         metadata,
-        Column("location_id", Integer, primary_key=True),
+        Column("sensor_id", Integer, primary_key=True),
         Column("name", String),
-        Column("locality", String),
+        Column("entity", String),
+        Column("source_type", String),
         Column("country", String),
-        Column("latitude", Float),
-        Column("longitude", Float),
-        Column("sensors", String),
-        Column("timezone", String),
-        Column("is_mobile", String),
-        Column("first_updated_utc", String),
-        Column("last_updated_utc", String),
+        Column("city", String),
+        Column("location_name", String),
+        Column("sensor_type", String),
+        Column("manufacturer", String),
+        Column("model", String),
+        Column("unit", String),
+        Column("last_updated", String),
+        Column("location_id", Integer),
     )
-    
-    # Load locations to bronze
-    logger.info("Loading locations to bronze_layer")
+
+    logger.info("Loading sensors to bronze_layer")
     load(
-        df=df_locations,
+        df=df_sensors,
         postgresql_client=postgresql_client,
-        table=locations_table,
+        table=sensors_table,
         metadata=metadata,
-        load_method=config.get("locations_load_method", "upsert"),
+        load_method=config.get("sensors_load_method", "upsert"),
     )
-    
-    logger.success("Bronze pipeline run successful")
+
+    logger.success("Sensors pipeline run successful")
 
 
 if __name__ == "__main__":
-    # Load config
     with open("config/bronze_tables.yaml", "r") as f:
-        bronze_config = yaml.safe_load(f)
-    
-    # Run pipeline
+        cfg = yaml.safe_load(f)
     pipeline({
-        "country_id": bronze_config["bronze_tables"]["locations"]["country_id"],
-        "locations_load_method": bronze_config["bronze_tables"]["locations"]["load_method"],
+        "sensors_load_method": cfg["bronze_tables"]["sensors"]["load_method"],
     })
