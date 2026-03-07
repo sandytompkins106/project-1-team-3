@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 from connectors.openaq_client import OpenAQClient
 from loguru import logger
@@ -31,6 +32,31 @@ def get_all_locations(country_id: int, page_size: int = 100) -> list:
 
     return all_results
 
+
+def clean_sensors_for_storage(raw_sensors) -> str:
+    """Store sensors as a stable JSON string with only key fields needed downstream."""
+    if not isinstance(raw_sensors, list):
+        return "[]"
+
+    cleaned = []
+    for sensor in raw_sensors:
+        if not isinstance(sensor, dict):
+            continue
+
+        sensor_id = sensor.get("id")
+        if sensor_id is None:
+            continue
+
+        cleaned.append(
+            {
+                "id": sensor_id,
+                "name": sensor.get("name"),
+            }
+        )
+
+    # separators make stored JSON compact and deterministic.
+    return json.dumps(cleaned, separators=(",", ":"))
+
 def build_locations_raw(raw_results: list) -> pd.DataFrame:
     df = pd.json_normalize(raw_results)
 
@@ -63,6 +89,8 @@ def build_locations_raw(raw_results: list) -> pd.DataFrame:
         "first_updated_utc",
         "last_updated_utc"
     ]
+
+    df_clean["sensors"] = df_clean["sensors"].apply(clean_sensors_for_storage)
 
     return df_clean
 
