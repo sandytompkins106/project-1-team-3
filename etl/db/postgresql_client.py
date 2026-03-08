@@ -1,6 +1,7 @@
-from sqlalchemy import create_engine, Table, MetaData
+from sqlalchemy import create_engine, Table, MetaData, Column, text
 from sqlalchemy.engine import URL
 from sqlalchemy.dialects import postgresql
+from typing import Optional
 
 class PostgreSqlClient:
     """
@@ -54,6 +55,34 @@ class PostgreSqlClient:
         # query and return as list of dicts
         result = self.engine.execute(table.select()).fetchall()
         return [dict(row) for row in result]
+
+    def execute_sql(self, sql: str) -> list[dict]:
+        """Execute a raw SQL query and return rows as list of dictionaries."""
+        with self.engine.connect() as connection:
+            result = connection.execute(text(sql)).fetchall()
+        return [dict(row._mapping) for row in result]
+
+    def reflect_table(self, table_name: str, schema: str = "public") -> tuple[Table, MetaData]:
+        """Reflect a table definition from the connected database."""
+        metadata = MetaData(schema=schema)
+        table = Table(table_name, metadata, autoload_with=self.engine)
+        return table, metadata
+
+    def create_table_like(
+        self,
+        source_table: Table,
+        target_table_name: Optional[str] = None,
+    ) -> tuple[Table, MetaData]:
+        """Create a table in the current database with the same columns and primary keys as source_table."""
+        table_name = target_table_name or source_table.name
+        metadata = MetaData()
+        columns = [
+            Column(column.name, column.type, primary_key=column.primary_key)
+            for column in source_table.columns
+        ]
+        table = Table(table_name, metadata, *columns)
+        metadata.create_all(self.engine)
+        return table, metadata
 
     def insert(self, data: list[dict], table: Table, metadata: MetaData) -> None:
         metadata.create_all(self.engine)

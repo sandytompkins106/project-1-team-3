@@ -1,5 +1,6 @@
 import json
 import time
+from typing import Optional
 
 import pandas as pd
 
@@ -75,9 +76,9 @@ def enrich_city_state_from_coordinates(
 
     nominatim = NominatimClient()
 
-    cache: dict[tuple[float, float], tuple[str | None, str | None]] = {}
-    cities: list[str | None] = []
-    states: list[str | None] = []
+    cache: dict[tuple[float, float], tuple[Optional[str], Optional[str]]] = {}
+    cities: list[Optional[str]] = []
+    states: list[Optional[str]] = []
     api_calls = 0
     cache_hits = 0
     total_rows = len(df)
