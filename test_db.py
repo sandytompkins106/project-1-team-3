@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from db.postgresql_client import PostgreSqlClient
+from etl.db.postgresql_client import PostgreSqlClient
 
 # Load environment variables
 load_dotenv()

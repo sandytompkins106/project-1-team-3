@@ -3,8 +3,8 @@ import time
 
 import pandas as pd
 
-from connectors.nominatim_client import NominatimClient
-from connectors.openaq_client import OpenAQClient
+from etl.connectors.nominatim_client import NominatimClient
+from etl.connectors.openaq_client import OpenAQClient
 from loguru import logger
 
 
