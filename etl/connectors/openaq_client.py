@@ -1,6 +1,6 @@
 import requests
 import time
-from config.config import OPENAQ_API_KEY, OPENAQ_BASE_URL
+from etl.config.config import OPENAQ_API_KEY, OPENAQ_BASE_URL
 
 
 class OpenAQClient:

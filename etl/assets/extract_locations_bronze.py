@@ -3,8 +3,8 @@ import time
 
 import pandas as pd
 
-from connectors.nominatim_client import NominatimClient
-from connectors.openaq_client import OpenAQClient
+from etl.connectors.nominatim_client import NominatimClient
+from etl.connectors.openaq_client import OpenAQClient
 from loguru import logger
 
 
@@ -34,7 +34,7 @@ def get_all_locations(country_id: int, page_size: int = 100) -> list:
         all_results.extend(results)
         page += 1
 
-    return all_results
+    return all_results[0:30]
 
 
 def clean_sensors_for_storage(raw_sensors) -> str:

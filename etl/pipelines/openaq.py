@@ -1,10 +1,10 @@
 import os
 import yaml
 from loguru import logger
-from sqlalchemy import Column, Integer, String, Float, MetaData, Table
+from sqlalchemy import Column, Integer, String, MetaData, Table
 from dotenv import load_dotenv
-from assets.extract_locations_bronze import run_locations_bronze
-from db.postgresql_client import PostgreSqlClient
+from etl.assets.extract_locations_bronze import run_locations_bronze
+from etl.db.postgresql_client import PostgreSqlClient
 
 
 def load(
@@ -102,7 +102,7 @@ def pipeline(config: dict):
 
 if __name__ == "__main__":
     # Load config
-    with open("config/bronze_tables.yaml", "r") as f:
+    with open("etl/config/bronze_tables.yaml", "r") as f:
         bronze_config = yaml.safe_load(f)
     
     # Run pipeline

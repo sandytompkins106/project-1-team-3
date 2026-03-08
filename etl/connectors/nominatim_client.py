@@ -1,7 +1,7 @@
 import requests
 from typing import Optional
 
-from config.config import (
+from etl.config.config import (
     NOMINATIM_BASE_URL,
     NOMINATIM_TIMEOUT,
     NOMINATIM_USER_AGENT,
