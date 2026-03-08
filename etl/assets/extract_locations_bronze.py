@@ -34,7 +34,7 @@ def get_all_locations(country_id: int, page_size: int = 100) -> list:
         all_results.extend(results)
         page += 1
 
-    return all_results[0:30]
+    return all_results
 
 
 def clean_sensors_for_storage(raw_sensors) -> str:
