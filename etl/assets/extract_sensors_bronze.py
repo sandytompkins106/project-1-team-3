@@ -35,7 +35,7 @@ def get_all_sensors(postgresql_client: PostgreSqlClient) -> list:
             
             all_results.extend(results)
 
-    return all_results
+    return all_results[0:30]
 
 def build_sensors_raw(raw_results: list) -> pd.DataFrame:
 
@@ -67,7 +67,6 @@ def build_sensors_raw(raw_results: list) -> pd.DataFrame:
         'location_id',
     ]].rename(columns={
         'id':                           'sensor_id',
-        'parameter_name':               'parameter',
         'parameter_units':              'units',
         'parameter_displayName':        'parameter_display_name',
         'datetimeFirst_utc':            'first_updated_utc',

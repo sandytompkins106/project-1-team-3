@@ -77,7 +77,7 @@ def pipeline(config: dict):
         Column("sensor_id", Integer, primary_key=True),
         Column("name", String),
         Column("parameter_id", Integer),
-        Column("parameter", String),
+        Column("parameter_name", String),
         Column("units", String),
         Column("parameter_display_name", String),
         Column("first_updated_utc", String),
