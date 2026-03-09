@@ -139,7 +139,7 @@ def pipeline(config: dict):
 
 
 if __name__ == "__main__":
-    with open("config/bronze_tables.yaml", "r") as f:
+    with open("etl/config/bronze_tables.yaml", "r") as f:
         cfg = yaml.safe_load(f)
     pipeline({
         "measurements_load_method": cfg["bronze_tables"]["measurements"]["load_method"],
