@@ -31,7 +31,7 @@ def get_all_locations(country_id: int, page_size: int = 100) -> list:
 
     return all_results
 
-def build_locations_raw(raw_results):
+def build_locations_raw(raw_results: list) -> pd.DataFrame:
     df = pd.json_normalize(raw_results)
 
     df_clean = df[[
@@ -39,6 +39,7 @@ def build_locations_raw(raw_results):
         "name",
         "locality",           
         "country.code",
+        "country.name",
         "coordinates.latitude",
         "coordinates.longitude",
         "sensors",
@@ -52,7 +53,8 @@ def build_locations_raw(raw_results):
         "location_id",
         "name",
         "locality",
-        "country",
+        "country_code",
+        "country_name",
         "latitude",
         "longitude",
         "sensors",
