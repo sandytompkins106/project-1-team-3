@@ -1,5 +1,6 @@
 import os
 import yaml
+import pandas as pd
 from loguru import logger
 from sqlalchemy import Column, Integer, Float, String, MetaData, Table
 from dotenv import load_dotenv
@@ -8,7 +9,7 @@ from etl.db.postgresql_client import PostgreSqlClient
 
 
 def load(
-    df,
+    df: pd.DataFrame,
     postgresql_client: PostgreSqlClient,
     table: Table,
     metadata: MetaData,
