@@ -1,6 +1,6 @@
 {% set config = {
     "source_table_name": "locations",
-    "load_method": "upsert"
+    "load_method": "overwrite"
 } %}
 
 SELECT
@@ -16,4 +16,6 @@ SELECT
     is_mobile,
     first_updated_utc,
     last_updated_utc
-FROM public.{{ config["source_table_name"] }};
+FROM public.{{ config["source_table_name"] }}
+ORDER BY
+    location_id;
