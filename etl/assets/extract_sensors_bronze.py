@@ -35,7 +35,7 @@ def get_all_sensors(postgresql_client: PostgreSqlClient) -> list:
             
             all_results.extend(results)
 
-    return all_results[0:30]
+    return all_results
 
 def build_sensors_raw(raw_results: list) -> pd.DataFrame:
 
