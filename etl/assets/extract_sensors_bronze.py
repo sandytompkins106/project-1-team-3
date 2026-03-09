@@ -28,8 +28,11 @@ def get_all_sensors(postgresql_client: PostgreSqlClient) -> list:
 
             response = client.get(f"sensors/{sensor_id}", params=params)
             results = response.get("results", [])
+
+            # Tag each sensor row with the location id
             for result in results:
                 result["location_id"] = location_id
+            
             all_results.extend(results)
 
     return all_results
