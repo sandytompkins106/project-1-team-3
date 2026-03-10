@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY etl ./etl
 
 # We will replace this pipeline with the unified one
-CMD ["python", "-m", "etl.pipelines.openaq"]
+CMD ["python", "-m", "etl.pipelines.run_all"]
