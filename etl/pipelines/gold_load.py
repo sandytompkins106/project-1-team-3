@@ -170,7 +170,8 @@ def _run_analysis_templates(
         )
 
 
-if __name__ == "__main__":
+def pipeline() -> None:
+    """Run the full gold load pipeline: staging materialisation followed by analysis templates."""
     load_dotenv()
 
     source_client = _build_source_client()
@@ -185,3 +186,7 @@ if __name__ == "__main__":
         source_client=analysis_source_client,
         target_client=analysis_target_client,
     )
+
+
+if __name__ == "__main__":
+    pipeline()
