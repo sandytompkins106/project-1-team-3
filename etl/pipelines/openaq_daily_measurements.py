@@ -113,23 +113,6 @@ def pipeline(config: dict):
         Column("location_id", Integer),
     )
 
-    
-    # --- DEBUG: try a single record insert first to isolate issues ---
-    logger.info("Testing single record insert before full load...")
-    try:
-        test_record = df_measurements.head(1).to_dict(orient="records")
-        logger.info(f"Test record: {test_record}")
-        postgresql_client.insert(
-            data=test_record,
-            table=measurements_table,
-            metadata=metadata,
-        )
-        logger.success("Test insert succeeded")
-    except Exception as e:
-        logger.error(f"Test insert failed: {e}")
-        return
-
-
     logger.info("Loading measurements to bronze_layer")
     load(
         df=df_measurements,
