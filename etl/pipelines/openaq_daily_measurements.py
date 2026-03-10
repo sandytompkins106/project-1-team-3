@@ -17,7 +17,7 @@ def load(
     load_method: str = "upsert",
 ) -> None:
     """
-    Load dataframe to postgres using specified method.
+    Load a DataFrame to PostgreSQL using the specified insert, upsert, or overwrite method.
     """
     if load_method == "insert":
         postgresql_client.insert(
@@ -38,6 +38,10 @@ def load(
 
 
 def pipeline(config: dict):
+    """
+    Run the end-to-end bronze measurements pipeline: extract PM2.5 readings for the
+    past 6 months, define the target table schema, and load results into PostgreSQL.
+    """
     logger.info("Starting measurements pipeline run")
 
     # load env

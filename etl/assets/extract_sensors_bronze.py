@@ -6,6 +6,11 @@ from loguru import logger
 
 
 def get_all_sensors(postgresql_client: PostgreSqlClient) -> list:
+    """
+    Fetch full sensor details from the OpenAQ API for every sensor in the locations table.
+    Tags each result with its originating location_id for downstream traceability.
+    """
+
     client = OpenAQClient()
     all_results = []
 
@@ -38,6 +43,9 @@ def get_all_sensors(postgresql_client: PostgreSqlClient) -> list:
     return all_results
 
 def build_sensors_raw(raw_results: list) -> pd.DataFrame:
+    """
+    Normalise raw sensor records, select relevant columns, and apply snake_case renaming.
+    """
 
     df = pd.json_normalize(raw_results, sep="_")
 
@@ -84,9 +92,8 @@ def build_sensors_raw(raw_results: list) -> pd.DataFrame:
     return df_clean
 
 def run_sensors_bronze(postgresql_client: PostgreSqlClient) -> pd.DataFrame:
-    """
-    Full bronze ingestion for sensors.
-    """
+    """Fetch and process all raw sensor records into a clean bronze layer DataFrame."""
+
     raw = get_all_sensors(postgresql_client)
     df = build_sensors_raw(raw)
     return df

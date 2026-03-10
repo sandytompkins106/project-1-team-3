@@ -12,6 +12,7 @@ ANALYSIS_LOAD_METHODS = {"query", "insert", "overwrite"}
 
 
 def _required_env(name: str) -> str:
+    """Fetch a required environment variable, raising ValueError if it is missing."""
     value = os.environ.get(name)
     if not value:
         raise ValueError(f"Missing required environment variable: {name}")
@@ -19,6 +20,7 @@ def _required_env(name: str) -> str:
 
 
 def _build_source_client() -> PostgreSqlClient:
+    """Instantiate a PostgreSqlClient for the source database from environment variables."""
     return PostgreSqlClient(
         server_name=_required_env("SERVER_NAME"),
         database_name=_required_env("DATABASE_NAME"),
@@ -29,6 +31,7 @@ def _build_source_client() -> PostgreSqlClient:
 
 
 def _build_target_client() -> PostgreSqlClient:
+    """Instantiate a PostgreSqlClient for the target database from environment variables."""
     return PostgreSqlClient(
         server_name=_required_env("TARGET_SERVER_NAME"),
         database_name=_required_env("TARGET_DATABASE_NAME"),
@@ -45,6 +48,7 @@ def _load_with_method(
     target_table,
     target_metadata,
 ) -> None:
+    """Dispatch a data load to the target table using the specified insert, overwrite, or upsert method."""
     if method == "insert":
         target_client.insert(data=data, table=target_table, metadata=target_metadata)
         return
@@ -61,6 +65,10 @@ def _run_staging_templates(
     source_client: PostgreSqlClient,
     target_client: PostgreSqlClient,
 ) -> None:
+    """
+    Execute all Jinja SQL templates in the staging directory and load results into the target database.
+    Each template's config block controls the source table name and load method.
+    """
     environment = Environment(loader=FileSystemLoader("etl/sql/staging"))
 
     for sql_path in environment.list_templates():
@@ -107,6 +115,10 @@ def _run_analysis_templates(
     source_client: PostgreSqlClient,
     target_client: PostgreSqlClient,
 ) -> None:
+    """
+    Execute all Jinja SQL templates in the analysis directory against the gold layer.
+    Supports query-only execution or materialising results via insert or overwrite.
+    """
     environment = Environment(loader=FileSystemLoader("etl/sql/analysis"))
 
     for sql_path in environment.list_templates():

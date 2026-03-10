@@ -8,11 +8,13 @@ import etl.pipelines.openaq_daily_measurements as measurements_pipeline
 
 
 def load_config(path: str = "etl/config/bronze_tables.yaml") -> dict:
+    """Load and parse the YAML config file from the given path."""
     with open(path, "r") as f:
         return yaml.safe_load(f)
 
 
 def main():
+    """Orchestrate the full OpenAQ ETL pipeline, running locations, sensors, and measurements in sequence."""
     logger.info("=== Starting full OpenAQ ETL pipeline ===")
 
     try:
