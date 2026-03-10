@@ -13,7 +13,10 @@ def get_all_measurements_data(
     page_size: int = 1000,
     max_retries: int=3,
 ) -> list:
-    """Fetch all daily measurements for a given sensor within a date range."""
+    """
+    Fetch all daily measurements for a sensor within a date range.
+    Paginates through the OpenAQ API until no further results are returned.
+    """
 
     client = OpenAQClient()
     all_results = []
@@ -89,8 +92,9 @@ def run_measurements_bronze(
     datetime_to: datetime,
 ) -> pd.DataFrame:
     """
-    Loop through all sensors stored in RDS postgres locations table
-    and fetch daily measurements for each one.
+    Orchestrate bronze-layer ingestion of daily PM2.5 measurements.
+    Reads all locations from PostgreSQL, iterates over each sensor, and fetches
+    measurements from the OpenAQ API, returning a single combined DataFrame.
     """
     # load all locations from bronze layer 
     loc_data = postgres_client.get_table("locations")

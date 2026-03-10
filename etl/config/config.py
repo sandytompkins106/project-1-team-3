@@ -1,3 +1,8 @@
+"""
+Central configuration module for the OpenAQ data pipeline.
+Loads API credentials and service settings from environment variables,
+and raises early if required values are missing.
+"""
 import os
 from dotenv import load_dotenv
 

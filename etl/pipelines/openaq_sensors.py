@@ -44,6 +44,10 @@ def load(
 
 
 def pipeline(config: dict):
+    """
+    Run the end-to-end bronze sensors pipeline: extract sensor details from the OpenAQ API
+    and load them into PostgreSQL using the configured load method.
+    """
     logger.info("Starting bronze pipeline run [ sensors ]")
     
     # Load environment variables from .env file
