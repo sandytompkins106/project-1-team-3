@@ -135,7 +135,10 @@ def _run_analysis_templates(
                 f"Use one of {sorted(ANALYSIS_LOAD_METHODS)}"
             )
 
-        rendered_sql = sql_template.render()
+        #rendered_sql = sql_template.render()
+        
+        #FIX - fix: remove trailing semicolon from SQL templates to prevent syntax error in CREATE TABLE AS
+        rendered_sql = sql_template.render().rstrip().rstrip(";")
 
         if load_method == "query":
             rows = source_client.execute_sql(rendered_sql)
@@ -161,8 +164,13 @@ def _run_analysis_templates(
                 f"{rendered_sql}"
             )
 
+        #with target_client.engine.begin() as connection:
+        #    connection.execute(text(statement))
+
+        # FIX - split into two separate execute() calls
         with target_client.engine.begin() as connection:
-            connection.execute(text(statement))
+            connection.execute(text(f"DROP TABLE IF EXISTS {qualified_target}"))
+            connection.execute(text(f"CREATE TABLE {qualified_target} AS ({rendered_sql})"))
 
         print(
             f"Analysis template {sql_path} loaded into {qualified_target} "
