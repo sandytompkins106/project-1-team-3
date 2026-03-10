@@ -10,6 +10,10 @@ from loguru import logger
 
 
 def get_all_locations(country_id: int, page_size: int = 100) -> list:
+    """
+    Fetch all locations for a given country from the OpenAQ API.
+    Paginates until no further results are returned.
+    """
 
     client = OpenAQClient()
     all_results = []
@@ -68,7 +72,11 @@ def enrich_city_state_from_coordinates(
     sleep_seconds: float = 1.0,
     log_every: int = 50,
 ) -> pd.DataFrame:
-    """Add city/state columns via reverse geocoding with in-memory caching."""
+    """
+    Add city and state columns via reverse geocoding using the Nominatim API.
+    Uses in-memory coordinate caching to minimise redundant API calls.
+    """
+
     if df.empty:
         df["city"] = []
         df["state"] = []
@@ -137,6 +145,11 @@ def enrich_city_state_from_coordinates(
     return df
 
 def build_locations_raw(raw_results: list) -> pd.DataFrame:
+    """
+    Normalise raw location records, rename columns, clean sensors, and enrich
+    with city/state via reverse geocoding before dropping lat/lon.
+    """
+
     df = pd.json_normalize(raw_results)
 
     df_clean = df[[
@@ -178,9 +191,7 @@ def build_locations_raw(raw_results: list) -> pd.DataFrame:
     return df_clean
 
 def run_locations_bronze(country_id: int) -> pd.DataFrame:
-    """
-    Full bronze ingestion for locations.
-    """
+    """Fetch and process all raw location records for a country into a clean bronze layer DataFrame."""
+
     raw = get_all_locations(country_id)
     return build_locations_raw(raw)
-

@@ -1,0 +1,9 @@
+Jinja2==3.1.6
+loguru==0.7.3
+pandas==2.3.3
+pg8000==1.31.4
+python-dateutil==2.8.2
+python-dotenv==1.2.1
+PyYAML==6.0.2
+requests==2.32.5
+SQLAlchemy==1.4.51

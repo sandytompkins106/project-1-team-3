@@ -2,14 +2,17 @@ import os
 
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
+from sqlalchemy import text
 
 from etl.db.postgresql_client import PostgreSqlClient
 
 
 VALID_LOAD_METHODS = {"insert", "overwrite", "upsert"}
+ANALYSIS_LOAD_METHODS = {"query", "insert", "overwrite"}
 
 
 def _required_env(name: str) -> str:
+    """Fetch a required environment variable, raising ValueError if it is missing."""
     value = os.environ.get(name)
     if not value:
         raise ValueError(f"Missing required environment variable: {name}")
@@ -17,6 +20,7 @@ def _required_env(name: str) -> str:
 
 
 def _build_source_client() -> PostgreSqlClient:
+    """Instantiate a PostgreSqlClient for the source database from environment variables."""
     return PostgreSqlClient(
         server_name=_required_env("SERVER_NAME"),
         database_name=_required_env("DATABASE_NAME"),
@@ -27,6 +31,7 @@ def _build_source_client() -> PostgreSqlClient:
 
 
 def _build_target_client() -> PostgreSqlClient:
+    """Instantiate a PostgreSqlClient for the target database from environment variables."""
     return PostgreSqlClient(
         server_name=_required_env("TARGET_SERVER_NAME"),
         database_name=_required_env("TARGET_DATABASE_NAME"),
@@ -43,6 +48,7 @@ def _load_with_method(
     target_table,
     target_metadata,
 ) -> None:
+    """Dispatch a data load to the target table using the specified insert, overwrite, or upsert method."""
     if method == "insert":
         target_client.insert(data=data, table=target_table, metadata=target_metadata)
         return
@@ -55,12 +61,14 @@ def _load_with_method(
     target_client.upsert(data=data, table=target_table, metadata=target_metadata)
 
 
-if __name__ == "__main__":
-    load_dotenv()
-
-    source_client = _build_source_client()
-    target_client = _build_target_client()
-
+def _run_staging_templates(
+    source_client: PostgreSqlClient,
+    target_client: PostgreSqlClient,
+) -> None:
+    """
+    Execute all Jinja SQL templates in the staging directory and load results into the target database.
+    Each template's config block controls the source table name and load method.
+    """
     environment = Environment(loader=FileSystemLoader("etl/sql/staging"))
 
     for sql_path in environment.list_templates():
@@ -101,3 +109,79 @@ if __name__ == "__main__":
             f"Loaded {len(data)} rows into target table {target_table.name} "
             f"from {sql_path} using {load_method}"
         )
+
+
+def _run_analysis_templates(
+    source_client: PostgreSqlClient,
+    target_client: PostgreSqlClient,
+) -> None:
+    """
+    Execute all Jinja SQL templates in the analysis directory against the gold layer.
+    Supports query-only execution or materialising results via insert or overwrite.
+    """
+    environment = Environment(loader=FileSystemLoader("etl/sql/analysis"))
+
+    for sql_path in environment.list_templates():
+        sql_template = environment.get_template(sql_path)
+        template_module = sql_template.make_module()
+        template_config = getattr(template_module, "config", {})
+        load_method = str(template_config.get("load_method", "query")).lower()
+        target_schema = str(template_config.get("target_schema", "public"))
+        target_table_name = template_config.get("target_table_name")
+
+        if load_method not in ANALYSIS_LOAD_METHODS:
+            raise ValueError(
+                f"Analysis template {sql_path} has invalid load_method '{load_method}'. "
+                f"Use one of {sorted(ANALYSIS_LOAD_METHODS)}"
+            )
+
+        rendered_sql = sql_template.render()
+
+        if load_method == "query":
+            rows = source_client.execute_sql(rendered_sql)
+            print(f"Analysis template {sql_path} returned {len(rows)} rows")
+            continue
+
+        if not target_table_name:
+            raise ValueError(
+                f"Analysis template {sql_path} requires config['target_table_name'] "
+                f"when load_method is '{load_method}'"
+            )
+
+        qualified_target = f"{target_schema}.{target_table_name}"
+
+        if load_method == "overwrite":
+            statement = (
+                f"DROP TABLE IF EXISTS {qualified_target}; "
+                f"CREATE TABLE {qualified_target} AS {rendered_sql}"
+            )
+        else:
+            statement = (
+                f"INSERT INTO {qualified_target} "
+                f"{rendered_sql}"
+            )
+
+        with target_client.engine.begin() as connection:
+            connection.execute(text(statement))
+
+        print(
+            f"Analysis template {sql_path} loaded into {qualified_target} "
+            f"using {load_method}"
+        )
+
+
+if __name__ == "__main__":
+    load_dotenv()
+
+    source_client = _build_source_client()
+    target_client = _build_target_client()
+
+    # Analysis templates run against gold-layer data, so source and target context are both target_client.
+    analysis_source_client = target_client
+    analysis_target_client = target_client
+
+    _run_staging_templates(source_client=source_client, target_client=target_client)
+    _run_analysis_templates(
+        source_client=analysis_source_client,
+        target_client=analysis_target_client,
+    )

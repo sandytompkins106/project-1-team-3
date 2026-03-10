@@ -4,9 +4,7 @@ from sqlalchemy.dialects import postgresql
 from typing import Optional
 
 class PostgreSqlClient:
-    """
-    A client for querying postgresql database.
-    """
+    """A client for querying postgresql database."""
 
     def __init__(
         self,
@@ -16,6 +14,7 @@ class PostgreSqlClient:
         password: str,
         port: int = 5432,
     ):
+        """Build the SQLAlchemy engine and persistent session from connection credentials."""
         self.host_name = server_name
         self.database_name = database_name
         self.username = username
@@ -34,15 +33,15 @@ class PostgreSqlClient:
         self.engine = create_engine(connection_url)
 
     def select_all(self, table: Table) -> list[dict]:
+        """Fetch all rows from a SQLAlchemy Table object and return as a list of dicts."""
         return [dict(row) for row in self.engine.execute(table.select()).all()]
 
     def create_table(self, metadata: MetaData) -> None:
-        """
-        Creates table provided in the metadata object
-        """
+        """Create table provided in the metadata object."""
         metadata.create_all(self.engine)
 
     def drop_table(self, table_name: str) -> None:
+        """Drop a table by name if it exists."""
         self.engine.execute(f"drop table if exists {table_name};")
 
     def get_table(self, table_name: str, schema: str = "public") -> list[dict]:
@@ -85,11 +84,13 @@ class PostgreSqlClient:
         return table, metadata
 
     def insert(self, data: list[dict], table: Table, metadata: MetaData) -> None:
+        """Create the table if needed and insert all rows in a single statement."""
         metadata.create_all(self.engine)
         insert_statement = postgresql.insert(table).values(data)
         self.engine.execute(insert_statement)
 
     def overwrite(self, data: list[dict], table: Table, metadata: MetaData) -> None:
+        """Drop the table and re-insert all rows from scratch."""
         self.drop_table(table.name)
         self.insert(data=data, table=table, metadata=metadata)
 
