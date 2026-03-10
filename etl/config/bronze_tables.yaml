@@ -2,18 +2,18 @@ bronze_tables:
   locations:
     table_name: locations
     primary_keys: [location_id]
-    load_method: upsert  # options: insert (incremental), overwrite (full), upsert (default)
+    load_method: overwrite  # options: insert (incremental), overwrite (full), upsert (default)
     extract_function: run_locations_bronze
     country_id: 155  # Country ID for OpenAQ API (155 = United States)
     
   sensors:
     table_name: sensors
     primary_keys: [sensor_id]
-    load_method: upsert
+    load_method: overwrite
     extract_function: run_sensors_bronze
     
   measurements:
     table_name: measurements
     primary_keys: [location_id, sensor_id, timestamp]
-    load_method: upsert
+    load_method: overwrite
     extract_function: run_measurements_bronze
