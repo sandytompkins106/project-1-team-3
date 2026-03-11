@@ -135,7 +135,8 @@ def _run_analysis_templates(
                 f"Use one of {sorted(ANALYSIS_LOAD_METHODS)}"
             )
 
-           
+        #rendered_sql = sql_template.render()
+        
         #FIX - fix: remove trailing semicolon from SQL templates to prevent syntax error in CREATE TABLE AS
         rendered_sql = sql_template.render().rstrip().rstrip(";")
 
@@ -163,6 +164,9 @@ def _run_analysis_templates(
                 f"{rendered_sql}"
             )
 
+        #with target_client.engine.begin() as connection:
+        #    connection.execute(text(statement))
+
         # FIX - split into two separate execute() calls
         with target_client.engine.begin() as connection:
             connection.execute(text(f"DROP TABLE IF EXISTS {qualified_target}"))
@@ -174,7 +178,8 @@ def _run_analysis_templates(
         )
 
 
-if __name__ == "__main__":
+def pipeline() -> None:
+    """Run the full gold load pipeline: staging materialisation followed by analysis templates."""
     load_dotenv()
 
     source_client = _build_source_client()
@@ -189,3 +194,7 @@ if __name__ == "__main__":
         source_client=analysis_source_client,
         target_client=analysis_target_client,
     )
+
+
+if __name__ == "__main__":
+    pipeline()
