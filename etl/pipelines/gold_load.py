@@ -163,9 +163,6 @@ def _run_analysis_templates(
                 f"{rendered_sql}"
             )
 
-        #with target_client.engine.begin() as connection:
-        #    connection.execute(text(statement))
-
         # FIX - split into two separate execute() calls
         with target_client.engine.begin() as connection:
             connection.execute(text(f"DROP TABLE IF EXISTS {qualified_target}"))
