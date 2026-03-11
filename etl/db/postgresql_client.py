@@ -1,11 +1,10 @@
-from sqlalchemy import create_engine, Table, MetaData
+from sqlalchemy import create_engine, Table, MetaData, Column, text
 from sqlalchemy.engine import URL
 from sqlalchemy.dialects import postgresql
+from typing import Optional
 
 class PostgreSqlClient:
-    """
-    A client for querying postgresql database.
-    """
+    """A client for querying postgresql database."""
 
     def __init__(
         self,
@@ -15,6 +14,7 @@ class PostgreSqlClient:
         password: str,
         port: int = 5432,
     ):
+        """Build the SQLAlchemy engine and persistent session from connection credentials."""
         self.host_name = server_name
         self.database_name = database_name
         self.username = username
@@ -33,15 +33,15 @@ class PostgreSqlClient:
         self.engine = create_engine(connection_url)
 
     def select_all(self, table: Table) -> list[dict]:
+        """Fetch all rows from a SQLAlchemy Table object and return as a list of dicts."""
         return [dict(row) for row in self.engine.execute(table.select()).all()]
 
     def create_table(self, metadata: MetaData) -> None:
-        """
-        Creates table provided in the metadata object
-        """
+        """Create table provided in the metadata object."""
         metadata.create_all(self.engine)
 
     def drop_table(self, table_name: str) -> None:
+        """Drop a table by name if it exists."""
         self.engine.execute(f"drop table if exists {table_name};")
 
     def get_table(self, table_name: str, schema: str = "public") -> list[dict]:
@@ -55,12 +55,42 @@ class PostgreSqlClient:
         result = self.engine.execute(table.select()).fetchall()
         return [dict(row) for row in result]
 
+    def execute_sql(self, sql: str) -> list[dict]:
+        """Execute a raw SQL query and return rows as list of dictionaries."""
+        with self.engine.connect() as connection:
+            result = connection.execute(text(sql)).fetchall()
+        return [dict(row._mapping) for row in result]
+
+    def reflect_table(self, table_name: str, schema: str = "public") -> tuple[Table, MetaData]:
+        """Reflect a table definition from the connected database."""
+        metadata = MetaData(schema=schema)
+        table = Table(table_name, metadata, autoload_with=self.engine)
+        return table, metadata
+
+    def create_table_like(
+        self,
+        source_table: Table,
+        target_table_name: Optional[str] = None,
+    ) -> tuple[Table, MetaData]:
+        """Create a table in the current database with the same columns and primary keys as source_table."""
+        table_name = target_table_name or source_table.name
+        metadata = MetaData()
+        columns = [
+            Column(column.name, column.type, primary_key=column.primary_key)
+            for column in source_table.columns
+        ]
+        table = Table(table_name, metadata, *columns)
+        metadata.create_all(self.engine)
+        return table, metadata
+
     def insert(self, data: list[dict], table: Table, metadata: MetaData) -> None:
+        """Create the table if needed and insert all rows in a single statement."""
         metadata.create_all(self.engine)
         insert_statement = postgresql.insert(table).values(data)
         self.engine.execute(insert_statement)
 
     def overwrite(self, data: list[dict], table: Table, metadata: MetaData) -> None:
+        """Drop the table and re-insert all rows from scratch."""
         self.drop_table(table.name)
         self.insert(data=data, table=table, metadata=metadata)
 

@@ -1,10 +1,10 @@
 import os
 import yaml
 from loguru import logger
-from sqlalchemy import Column, Integer, String, Float, MetaData, Table
+from sqlalchemy import Column, Integer, String, MetaData, Table
 from dotenv import load_dotenv
-from assets.extract_locations_bronze import run_locations_bronze
-from db.postgresql_client import PostgreSqlClient
+from etl.assets.extract_locations_bronze import run_locations_bronze
+from etl.db.postgresql_client import PostgreSqlClient
 
 
 def load(
@@ -43,7 +43,11 @@ def load(
 
 
 def pipeline(config: dict):
-    logger.info("Starting bronze pipeline run")
+    """
+    Run the end-to-end bronze locations pipeline: extract locations from the OpenAQ API
+    and load them into PostgreSQL using the configured load method.
+    """
+    logger.info("Starting bronze pipeline run [ locations ]")
     
     # Load environment variables from .env file
     load_dotenv()
@@ -76,10 +80,10 @@ def pipeline(config: dict):
         Column("location_id", Integer, primary_key=True),
         Column("name", String),
         Column("locality", String),
+        Column("city", String),
+        Column("state", String),
         Column("country_code", String),
         Column("country_name", String),
-        Column("latitude", Float),
-        Column("longitude", Float),
         Column("sensors", String),
         Column("timezone", String),
         Column("is_mobile", String),
@@ -97,12 +101,12 @@ def pipeline(config: dict):
         load_method=config.get("locations_load_method", "upsert"),
     )
     
-    logger.success("Bronze pipeline run successful")
+    logger.success("Bronze pipeline run [ locations ] successful")
 
 
 if __name__ == "__main__":
     # Load config
-    with open("config/bronze_tables.yaml", "r") as f:
+    with open("etl/config/bronze_tables.yaml", "r") as f:
         bronze_config = yaml.safe_load(f)
     
     # Run pipeline
