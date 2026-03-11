@@ -135,8 +135,7 @@ def _run_analysis_templates(
                 f"Use one of {sorted(ANALYSIS_LOAD_METHODS)}"
             )
 
-        #rendered_sql = sql_template.render()
-        
+           
         #FIX - fix: remove trailing semicolon from SQL templates to prevent syntax error in CREATE TABLE AS
         rendered_sql = sql_template.render().rstrip().rstrip(";")
 
